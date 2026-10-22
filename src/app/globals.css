@@ -72,6 +72,12 @@
   --code-danger: #fda29b;
   --code-success: #75e0a7;
 
+  /* Brand mark — fixed identity colours, identical in both themes (see app/icon.svg) */
+  --brand-from: #6366f1;
+  --brand-to: #4f46e5;
+  --brand-glyph: #ffffff;
+  --brand-check: #6ee7b7;
+
   /* Focus, elevation, decoration */
   --ring: #6366f1;
   --card-shadow: 0 1px 2px rgb(16 24 40 / 0.05);
@@ -185,6 +191,10 @@
   --color-code-danger: var(--code-danger);
   --color-code-success: var(--code-success);
   --color-ring: var(--ring);
+  --color-brand-from: var(--brand-from);
+  --color-brand-to: var(--brand-to);
+  --color-brand-glyph: var(--brand-glyph);
+  --color-brand-check: var(--brand-check);
 
   --shadow-card: var(--card-shadow);
   --shadow-elevated: var(--elevated-shadow);

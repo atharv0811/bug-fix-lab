@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { ArrowRight, Bug } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import { Logo } from "@/components/ui/logo";
 import { GitHubMark } from "@/components/ui/github-mark";
 import {
   DesktopNavLinks,
@@ -21,13 +22,10 @@ export const Navbar = () => {
       >
         <Link
           href="/"
-          className="group flex shrink-0 items-center gap-2.5 rounded-md"
+          className="flex shrink-0 items-center rounded-md"
           aria-label="Bug Fix Lab home"
         >
-          <span className="flex size-7 items-center justify-center rounded-md bg-accent text-accent-fg shadow-button">
-            <Bug size={15} strokeWidth={2.25} aria-hidden="true" />
-          </span>
-          <span className="text-[15px] font-semibold tracking-[-0.01em] text-fg">Bug Fix Lab</span>
+          <Logo size={28} />
         </Link>
 
         <span className="ml-5 mr-2 hidden h-5 w-px bg-line md:block" aria-hidden="true" />

@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Bug, ExternalLink } from "lucide-react";
+import { ExternalLink } from "lucide-react";
+import { LogoMark } from "@/components/ui/logo";
 import { bugCases } from "@/lib/bug-cases";
 import { siteConfig } from "@/lib/site";
 import { eyebrow } from "@/lib/ui";
@@ -18,9 +19,7 @@ export function Footer() {
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-8 md:grid-cols-[1.5fr_1fr_1fr]">
         <div className="max-w-sm">
           <Link href="/" className="inline-flex items-center gap-2.5">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-accent-fg shadow-sm">
-              <Bug size={17} aria-hidden="true" />
-            </span>
+            <LogoMark size={28} />
             <span className="text-sm font-semibold tracking-tight text-fg">{siteConfig.name}</span>
           </Link>
           <p className="mt-4 text-sm leading-6 text-muted">
