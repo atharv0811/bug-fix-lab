@@ -9,5 +9,5 @@ export const siteConfig = {
    * Public repository for this project. Leave as `null` until the repository
    * is published — "View source" actions stay hidden while this is unset.
    */
-  repositoryUrl: null as string | null,
+  repositoryUrl: "https://github.com/atharv0811/bug-fix-lab",
 };
