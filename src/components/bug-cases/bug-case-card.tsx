@@ -32,50 +32,43 @@ export default function BugCaseCard({ bugCase, index }: BugCaseCardProps) {
   const CategoryIcon = categoryIcons[bugCase.category] ?? Bug;
 
   return (
-    <article className="group relative flex h-full flex-col rounded-xl border border-slate-200 bg-white p-5 transition-[border-color,box-shadow] duration-200 hover:border-indigo-200 hover:shadow-md hover:shadow-slate-200/70 has-[a:focus-visible]:border-indigo-300 sm:p-6">
+    <article className="group relative flex h-full flex-col rounded-xl border border-line bg-surface p-5 shadow-card transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-accent-line hover:shadow-elevated motion-reduce:hover:translate-y-0 sm:p-6">
       <div className="mb-5 flex items-start justify-between gap-3">
-        <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-indigo-100 bg-indigo-50 text-indigo-600">
-          <CategoryIcon size={19} aria-hidden="true" />
+        <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-accent-line bg-accent-soft text-accent-text transition-colors">
+          <CategoryIcon size={18} aria-hidden="true" />
         </span>
         <DifficultyBadge difficulty={bugCase.difficulty} />
       </div>
 
-      <p className="mb-1.5 flex items-center gap-2 text-xs font-medium text-slate-500">
+      <p className="mb-1.5 flex items-center gap-2 text-xs font-medium text-muted">
         {index !== undefined && (
-          <span className="font-mono text-slate-400">
-            {String(index).padStart(2, "0")}
-          </span>
+          <span className="font-mono text-subtle">{String(index).padStart(2, "0")}</span>
         )}
         {bugCase.category}
       </p>
 
-      <h3 className="mb-2 text-base font-semibold tracking-tight text-slate-900">
+      <h3 className="mb-2 text-base font-semibold tracking-tight text-fg">
         <Link
           href={`/bug-cases/${bugCase.slug}`}
-          className="after:absolute after:inset-0 after:rounded-xl focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-indigo-500 focus-visible:after:ring-offset-2"
+          className="after:absolute after:inset-0 after:rounded-xl focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-ring focus-visible:after:ring-offset-2 focus-visible:after:ring-offset-canvas"
         >
           {bugCase.title}
         </Link>
       </h3>
 
-      <p className="mb-6 flex-1 text-sm leading-6 text-slate-600">
-        {bugCase.description}
-      </p>
+      <p className="mb-6 flex-1 text-sm leading-6 text-muted">{bugCase.description}</p>
 
-      <div className="flex items-center justify-between border-t border-slate-100 pt-4">
-        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500">
-          <FlaskConical size={14} aria-hidden="true" />
+      <div className="flex items-center justify-between border-t border-line pt-4">
+        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted">
+          <FlaskConical size={13} aria-hidden="true" />
           {bugCase.demo.kind === "live" ? "Live demo" : "Simulated demo"}
         </span>
         <span
-          className="inline-flex items-center gap-1 text-sm font-semibold text-indigo-600 transition-colors group-hover:text-indigo-800"
+          className="inline-flex items-center gap-1 text-sm font-semibold text-accent-text"
           aria-hidden="true"
         >
           Investigate
-          <ArrowRight
-            size={15}
-            className="transition-transform group-hover:translate-x-0.5"
-          />
+          <ArrowRight size={15} className="transition-transform group-hover:translate-x-0.5" />
         </span>
       </div>
     </article>

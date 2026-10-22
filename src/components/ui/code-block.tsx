@@ -5,14 +5,15 @@ import { CopyButton } from "@/components/ui/copy-button";
 
 type CodeVariant = "broken" | "fixed" | "neutral";
 
+// Tuned for the always-dark editor surface (--code-bg) in both themes.
 const tokenColors: Record<TokenKind, string> = {
-  plain: "text-slate-200",
-  comment: "text-slate-500 italic",
-  string: "text-emerald-300",
-  keyword: "text-violet-300",
-  number: "text-amber-300",
-  type: "text-sky-300",
-  function: "text-indigo-200",
+  plain: "text-code-fg",
+  comment: "text-code-muted italic",
+  string: "text-code-string",
+  keyword: "text-code-keyword",
+  number: "text-code-number",
+  type: "text-code-type",
+  function: "text-code-function",
 };
 
 const variants: Record<
@@ -22,22 +23,24 @@ const variants: Record<
   broken: {
     label: "Before",
     icon: CircleX,
-    badge: "bg-rose-500/15 text-rose-300 ring-rose-500/30",
-    accent: "before:bg-rose-500",
+    badge: "bg-danger-solid/15 text-code-danger ring-danger-solid/30",
+    accent: "before:bg-danger-solid",
   },
   fixed: {
     label: "After",
     icon: CircleCheck,
-    badge: "bg-emerald-500/15 text-emerald-300 ring-emerald-500/30",
-    accent: "before:bg-emerald-500",
+    badge: "bg-success-solid/15 text-code-success ring-success-solid/30",
+    accent: "before:bg-success-solid",
   },
   neutral: {
     label: "",
     icon: null,
     badge: "",
-    accent: "before:bg-indigo-500",
+    accent: "before:bg-transparent",
   },
 };
+
+const languageLabels = { tsx: "TSX", ts: "TS", css: "CSS" } as const;
 
 type CodeBlockProps = {
   sample: CodeSample;
@@ -52,10 +55,10 @@ export function CodeBlock({ sample, variant = "neutral" }: CodeBlockProps) {
 
   return (
     <figure
-      className={`relative flex min-w-0 flex-col overflow-hidden rounded-xl border border-slate-800 bg-slate-950 shadow-sm before:absolute before:inset-x-0 before:top-0 before:h-0.5 ${style.accent}`}
+      className={`relative flex min-w-0 flex-col overflow-hidden rounded-xl border border-code-line bg-code shadow-card ring-1 ring-black/5 before:absolute before:inset-y-0 before:left-0 before:w-0.5 dark:ring-white/5 ${style.accent}`}
     >
-      <figcaption className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-2.5">
-        <span className="flex min-w-0 items-center gap-2">
+      <figcaption className="flex items-center justify-between gap-3 border-b border-code-line bg-code-header px-4 py-2">
+        <span className="flex min-w-0 items-center gap-2.5">
           {VariantIcon ? (
             <span
               className={`inline-flex shrink-0 items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-semibold ring-1 ring-inset ${style.badge}`}
@@ -64,19 +67,22 @@ export function CodeBlock({ sample, variant = "neutral" }: CodeBlockProps) {
               {style.label}
             </span>
           ) : (
-            <FileCode2 size={14} className="shrink-0 text-slate-500" aria-hidden="true" />
+            <FileCode2 size={14} className="shrink-0 text-code-muted" aria-hidden="true" />
           )}
-          <span className="truncate font-mono text-xs text-slate-400">{sample.filename}</span>
+          <span className="truncate font-mono text-xs text-code-dim">{sample.filename}</span>
+          <span className="hidden shrink-0 rounded border border-code-line px-1 font-mono text-[10px] text-code-muted sm:inline">
+            {languageLabels[sample.language]}
+          </span>
         </span>
         <CopyButton code={sample.code} label={copyLabel} />
       </figcaption>
 
-      <pre className="flex-1 overflow-x-auto py-4 text-[13px] leading-6">
+      <pre className="flex-1 overflow-x-auto py-4 text-[13px] leading-6 [scrollbar-color:var(--code-line)_transparent]">
         <code className="grid min-w-max font-mono">
           {lines.map((line, lineIndex) => (
-            <span key={lineIndex} className="flex pr-4">
+            <span key={lineIndex} className="flex pr-5">
               <span
-                className="w-10 shrink-0 select-none pr-4 text-right text-slate-600"
+                className="w-11 shrink-0 select-none pr-4 text-right text-code-gutter"
                 aria-hidden="true"
               >
                 {lineIndex + 1}

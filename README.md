@@ -25,6 +25,30 @@ demonstrate a debugging approach; they are not client projects or real incidents
 - **Filterable case library** on the homepage.
 - **Responsive, accessible UI:** semantic HTML, keyboard focus states, a skip
   link, a mobile navigation menu, and `prefers-reduced-motion` support.
+- **Light and dark themes** with a navbar toggle, saved preference, OS-preference
+  fallback, and no flash of the wrong theme on load.
+
+## Theming
+
+All colours come from semantic design tokens in `src/app/globals.css`
+(`--canvas`, `--surface`, `--fg`, `--muted`, `--line`, `--accent`,
+`--success`/`--warning`/`--danger`/`--info`, `--code-*`, …). Each token has a
+light value on `:root` and a dark value on `[data-theme="dark"]`, and is exposed
+to Tailwind as a utility (`bg-surface`, `text-muted`, `border-line`, …).
+Components use these utilities instead of raw palette colours. Shared class
+presets (buttons, inputs, tones) live in `src/lib/ui.ts`.
+
+How the preference works:
+
+1. An inline script in `<head>` (`src/lib/theme.ts`) runs before first paint.
+   It applies the saved choice from `localStorage` (`bug-fix-lab-theme`), or the
+   OS `prefers-color-scheme` setting when nothing is saved.
+2. `ThemeToggle` reads the current theme with `useSyncExternalStore`, so the
+   server and client render match and there is no hydration warning. Its icon is
+   switched with CSS, so the correct icon shows before hydration.
+3. Toggling saves the choice. Until the visitor chooses, the site follows OS
+   theme changes live.
+4. Code panels use an editor surface that stays dark in both themes.
 
 ## Tech stack
 
@@ -60,16 +84,18 @@ src/
 │   ├── globals.css                # Tailwind import, tokens, focus + motion rules
 │   └── bug-cases/[slug]/page.tsx  # Case workspace (statically generated)
 ├── components/
-│   ├── layout/                    # Navbar (server) + nav links (client), footer
+│   ├── layout/                    # Navbar, nav links, theme toggle, footer
 │   ├── home/hero-preview.tsx      # Debugging-workflow product preview
 │   ├── bug-cases/                 # Case card, filterable library, checklist,
 │   │                              # responsive overflow demo
 │   ├── demos/                     # One client component per case demo,
 │   │                              # shared segmented control, slug → demo map
-│   └── ui/                        # Code block, copy button, difficulty badge
+│   └── ui/                        # Code block, copy button, badges, status panel
 └── lib/
     ├── bug-cases.ts               # Typed case content + lookup helpers
     ├── highlight.ts               # Small TS/TSX/CSS tokenizer for code blocks
+    ├── theme.ts                   # Theme storage key + pre-paint init script
+    ├── ui.ts                      # Shared class presets on design tokens
     └── site.ts                    # Site name, GitHub profile, repository URL
 ```
 

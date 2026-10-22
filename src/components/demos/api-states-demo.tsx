@@ -1,8 +1,22 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { FolderOpen, Inbox, LoaderCircle, RefreshCw, Send, ServerCrash } from "lucide-react";
-import { SegmentedControl } from "@/components/demos/segmented-control";
+import {
+  CircleCheck,
+  CircleX,
+  FolderOpen,
+  Inbox,
+  LoaderCircle,
+  Network,
+  RefreshCw,
+  Send,
+  ServerCrash,
+  Terminal,
+} from "lucide-react";
+import { ChoiceGroup, type Choice } from "@/components/ui/choice-group";
+import { DemoToolbar } from "@/components/ui/demo-toolbar";
+import { ControlLabel, ModeSwitch } from "@/components/ui/mode-switch";
+import { buttonClass } from "@/lib/ui";
 
 type Implementation = "buggy" | "fixed";
 type Scenario = "success" | "empty" | "error" | "flaky";
@@ -26,12 +40,12 @@ const sampleProjects: Project[] = [
   { id: "p3", name: "Mobile onboarding flow", status: "Done" },
 ];
 
-const scenarioLabels: Record<Scenario, string> = {
-  success: "Success",
-  empty: "Empty response",
-  error: "Server error",
-  flaky: "Fail once, then succeed",
-};
+const scenarioChoices: Choice<Scenario>[] = [
+  { value: "success", title: "Success", hint: "Returns 3 projects", icon: CircleCheck },
+  { value: "empty", title: "Empty response", hint: "Succeeds with []", icon: Inbox },
+  { value: "error", title: "Server error", hint: "Always fails with 500", icon: ServerCrash },
+  { value: "flaky", title: "Fail once, then succeed", hint: "Attempt 1 fails, retry works", icon: RefreshCw },
+];
 
 class MockHttpError extends Error {}
 
@@ -61,21 +75,28 @@ function isAbort(error: unknown) {
 }
 
 const statusStyles: Record<Project["status"], string> = {
-  Active: "bg-emerald-50 text-emerald-700",
-  Paused: "bg-amber-50 text-amber-700",
-  Done: "bg-slate-100 text-slate-600",
+  Active: "border-success-line bg-success-soft text-success",
+  Paused: "border-warning-line bg-warning-soft text-warning",
+  Done: "border-line bg-surface-3 text-muted",
+};
+
+const logTones: Record<LogEntry["tone"], string> = {
+  error: "text-code-danger",
+  success: "text-code-success",
+  warning: "text-code-number",
+  info: "text-code-fg",
 };
 
 function ProjectRows({ projects }: { projects: Project[] }) {
   return (
-    <ul className="divide-y divide-slate-100">
+    <ul className="divide-y divide-line">
       {projects.map((project) => (
         <li key={project.id} className="flex items-center justify-between gap-3 px-4 py-3">
-          <span className="flex min-w-0 items-center gap-2.5 text-sm text-slate-800">
-            <FolderOpen size={15} className="shrink-0 text-slate-400" aria-hidden="true" />
+          <span className="flex min-w-0 items-center gap-2.5 text-sm text-fg">
+            <FolderOpen size={15} className="shrink-0 text-subtle" aria-hidden="true" />
             <span className="truncate">{project.name}</span>
           </span>
-          <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${statusStyles[project.status]}`}>
+          <span className={`rounded-md border px-1.5 py-0.5 text-xs font-medium ${statusStyles[project.status]}`}>
             {project.status}
           </span>
         </li>
@@ -86,9 +107,31 @@ function ProjectRows({ projects }: { projects: Project[] }) {
 
 function Spinner() {
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-2 text-slate-500">
-      <LoaderCircle size={22} className="animate-spin motion-reduce:animate-none" aria-hidden="true" />
+    <div className="flex h-full flex-col items-center justify-center gap-2 text-muted">
+      <LoaderCircle size={22} className="animate-spin text-accent-text motion-reduce:animate-none" aria-hidden="true" />
       <p className="text-sm">Loading projects…</p>
+    </div>
+  );
+}
+
+function StateMessage({
+  icon: Icon,
+  iconClass,
+  title,
+  children,
+}: {
+  icon: typeof Inbox;
+  iconClass: string;
+  title: string;
+  children?: React.ReactNode;
+}) {
+  return (
+    <div className="flex h-full flex-col items-center justify-center gap-1.5 px-6 text-center">
+      <span className={`mb-1 flex h-10 w-10 items-center justify-center rounded-xl border ${iconClass}`}>
+        <Icon size={19} aria-hidden="true" />
+      </span>
+      <p className="text-sm font-semibold text-fg">{title}</p>
+      {children}
     </div>
   );
 }
@@ -177,9 +220,9 @@ function ApiPanel({ implementation, scenario }: { implementation: Implementation
     switch (state.status) {
       case "idle":
         body = (
-          <div className="flex h-full items-center justify-center px-6 text-center text-sm text-slate-500">
-            No request sent yet.
-          </div>
+          <StateMessage icon={Send} iconClass="border-line bg-surface-2 text-subtle" title="No request sent yet">
+            <p className="text-sm text-muted">Send a request to load the project list.</p>
+          </StateMessage>
         );
         break;
       case "loading":
@@ -190,28 +233,20 @@ function ApiPanel({ implementation, scenario }: { implementation: Implementation
         break;
       case "empty":
         body = (
-          <div className="flex h-full flex-col items-center justify-center gap-1.5 px-6 text-center">
-            <Inbox size={22} className="text-slate-400" aria-hidden="true" />
-            <p className="text-sm font-semibold text-slate-900">No projects yet</p>
-            <p className="text-sm text-slate-500">The request succeeded but returned an empty list.</p>
-          </div>
+          <StateMessage icon={Inbox} iconClass="border-line bg-surface-2 text-muted" title="No projects yet">
+            <p className="text-sm text-muted">The request succeeded but returned an empty list.</p>
+          </StateMessage>
         );
         break;
       case "error":
         body = (
-          <div className="flex h-full flex-col items-center justify-center gap-1.5 px-6 text-center">
-            <ServerCrash size={22} className="text-rose-500" aria-hidden="true" />
-            <p className="text-sm font-semibold text-slate-900">Couldn&apos;t load projects</p>
-            <p className="text-sm text-slate-500">{state.message}</p>
-            <button
-              type="button"
-              onClick={loadFixed}
-              className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-800 transition-colors hover:bg-slate-50"
-            >
+          <StateMessage icon={ServerCrash} iconClass="border-danger-line bg-danger-soft text-danger" title="Couldn't load projects">
+            <p className="text-sm text-muted">{state.message}</p>
+            <button type="button" onClick={loadFixed} className={buttonClass({ variant: "secondary", size: "sm", className: "mt-2" })}>
               <RefreshCw size={14} aria-hidden="true" />
               Retry
             </button>
-          </div>
+          </StateMessage>
         );
         break;
     }
@@ -221,52 +256,53 @@ function ApiPanel({ implementation, scenario }: { implementation: Implementation
     ? `loading: ${loading} · projects: ${projects === null ? "null" : `[${projects.length}]`}`
     : `status: "${state.status}"`;
 
+  const busy = isBuggy ? loading : state.status === "loading";
+
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_16rem]">
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-4 py-2.5">
-          <p className="text-sm font-semibold text-slate-900">Projects</p>
-          <button
-            type="button"
-            onClick={load}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-700"
-          >
+      <div className="overflow-hidden rounded-xl border border-line bg-surface shadow-card">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-2.5">
+          <p className="flex items-center gap-2 text-sm font-semibold text-fg">
+            Projects
+            <span className="rounded border border-line bg-surface-2 px-1.5 font-mono text-[11px] font-normal text-muted">
+              GET /api/projects
+            </span>
+          </p>
+          <button type="button" onClick={load} className={buttonClass({ size: "sm" })}>
             <Send size={14} aria-hidden="true" />
             Send request
           </button>
         </div>
-        <div className="h-56" aria-live="polite" aria-busy={isBuggy ? loading : state.status === "loading"}>
+        <div className="h-56" aria-live="polite" aria-busy={busy}>
           {body}
         </div>
-        <p className="truncate border-t border-slate-100 bg-slate-50 px-4 py-2 font-mono text-xs text-slate-500">
+        <p className="flex items-center gap-2 truncate border-t border-line bg-surface-2 px-4 py-2 font-mono text-xs text-muted">
+          <span
+            className={`h-1.5 w-1.5 shrink-0 rounded-full ${busy ? "bg-warning-solid" : "bg-subtle"}`}
+            aria-hidden="true"
+          />
           {statusLabel}
         </p>
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-slate-950 p-3">
-        <p className="mb-2 font-mono text-[11px] uppercase tracking-wider text-slate-500">Request log</p>
-        {log.length === 0 ? (
-          <p className="font-mono text-xs text-slate-500">Waiting for a request…</p>
-        ) : (
-          <ul className="space-y-1.5 font-mono text-xs">
-            {log.map((entry) => (
-              <li
-                key={entry.id}
-                className={
-                  entry.tone === "error"
-                    ? "text-rose-300"
-                    : entry.tone === "success"
-                      ? "text-emerald-300"
-                      : entry.tone === "warning"
-                        ? "text-amber-300"
-                        : "text-slate-300"
-                }
-              >
-                {entry.message}
-              </li>
-            ))}
-          </ul>
-        )}
+      <div className="flex flex-col overflow-hidden rounded-xl border border-code-line bg-code">
+        <p className="flex items-center gap-1.5 border-b border-code-line bg-code-header px-3 py-2 font-mono text-[11px] uppercase tracking-wider text-code-muted">
+          <Terminal size={12} aria-hidden="true" />
+          Request log
+        </p>
+        <div className="flex-1 p-3">
+          {log.length === 0 ? (
+            <p className="font-mono text-xs text-code-muted">Waiting for a request…</p>
+          ) : (
+            <ul className="space-y-1.5 font-mono text-xs">
+              {log.map((entry) => (
+                <li key={entry.id} className={logTones[entry.tone]}>
+                  {entry.message}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -278,41 +314,44 @@ export function ApiStatesDemo() {
 
   return (
     <div>
-      <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-500">
-            Implementation
-          </p>
-          <SegmentedControl
-            label="Implementation"
-            value={implementation}
-            onChange={setImplementation}
-            options={[
-              { value: "buggy", label: "Buggy", tone: "broken" },
-              { value: "fixed", label: "Fixed", tone: "fixed" },
-            ]}
-          />
+      <DemoToolbar
+        icon={Network}
+        context={
+          <>
+            Mock <code className="font-mono text-fg-2">GET /api/projects</code>
+            <span className="text-subtle"> · {LATENCY_MS}ms simulated latency</span>
+          </>
+        }
+      >
+        <div className="w-full">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <ControlLabel>Implementation</ControlLabel>
+              <ModeSwitch
+                label="Implementation"
+                value={implementation}
+                onChange={setImplementation}
+                options={[
+                  { value: "buggy", label: "Buggy", tone: "broken", icon: CircleX },
+                  { value: "fixed", label: "Fixed", tone: "fixed", icon: CircleCheck },
+                ]}
+              />
+            </div>
+            <p className="max-w-xs text-xs leading-5 text-muted">
+              {implementation === "buggy"
+                ? "Separate loading and data flags, as in the “before” code."
+                : "One discriminated-union request state, as in the “after” code."}
+            </p>
+          </div>
+          <ControlLabel>Mock server response</ControlLabel>
+          <ChoiceGroup label="Mock server response" choices={scenarioChoices} value={scenario} onChange={setScenario} columns={4} />
         </div>
-        <div className="min-w-0">
-          <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-500">
-            Mock server response
-          </p>
-          <SegmentedControl
-            label="Mock server response"
-            value={scenario}
-            onChange={setScenario}
-            options={(Object.keys(scenarioLabels) as Scenario[]).map((value) => ({
-              value,
-              label: scenarioLabels[value],
-            }))}
-          />
-        </div>
-      </div>
+      </DemoToolbar>
 
       {/* Remount on every control change so each run starts from a clean state */}
       <ApiPanel key={`${implementation}-${scenario}`} implementation={implementation} scenario={scenario} />
 
-      <p className="mt-5 text-sm leading-6 text-slate-600">
+      <p className="mt-5 border-t border-line pt-4 text-sm leading-6 text-muted">
         Every request takes a fixed {LATENCY_MS}ms so the loading state is
         visible. The outcome is deterministic: it depends only on the selected
         response and the attempt number.

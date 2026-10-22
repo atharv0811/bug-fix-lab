@@ -1,8 +1,12 @@
 "use client";
 
 import { memo, useCallback, useEffect, useRef, useState } from "react";
-import { RotateCcw } from "lucide-react";
-import { SegmentedControl } from "@/components/demos/segmented-control";
+import { Activity, CircleCheck, CircleX, Info, RotateCcw } from "lucide-react";
+import { ChoiceGroup, type Choice } from "@/components/ui/choice-group";
+import { DemoToolbar } from "@/components/ui/demo-toolbar";
+import { ControlLabel } from "@/components/ui/mode-switch";
+import { StatusPanel } from "@/components/ui/status-panel";
+import { buttonClass, input, inputState } from "@/lib/ui";
 
 type Mode = "none" | "memo-inline" | "memo-callback";
 
@@ -16,12 +20,25 @@ const items: Item[] = [
   { id: "e", name: "Audit log" },
 ];
 
-const modeDescriptions: Record<Mode, string> = {
-  none: "Rows are plain components. Every parent render re-renders every row.",
-  "memo-inline":
-    "Rows are wrapped in memo(), but receive a new inline onSelect function on every render, so memo() never skips them.",
-  "memo-callback":
-    "Rows are wrapped in memo() and receive a stable onSelect from useCallback. Typing no longer re-renders them.",
+const modeChoices: Choice<Mode>[] = [
+  { value: "none", title: "No memo", hint: "Plain row components", tone: "broken", icon: CircleX, code: true },
+  { value: "memo-inline", title: "memo + inline callback", hint: "New onSelect each render", tone: "broken", icon: CircleX, code: true },
+  { value: "memo-callback", title: "memo + useCallback", hint: "Stable onSelect identity", tone: "fixed", icon: CircleCheck, code: true },
+];
+
+const modeDescriptions: Record<Mode, { tone: "danger" | "success"; text: string }> = {
+  none: {
+    tone: "danger",
+    text: "Rows are plain components. Every parent render re-renders every row.",
+  },
+  "memo-inline": {
+    tone: "danger",
+    text: "Rows are wrapped in memo(), but receive a new inline onSelect function on every render, so memo() never skips them.",
+  },
+  "memo-callback": {
+    tone: "success",
+    text: "Rows are wrapped in memo() and receive a stable onSelect from useCallback. Typing no longer re-renders them.",
+  },
 };
 
 /**
@@ -65,16 +82,22 @@ function Row({ item, selected, onSelect, onCommit }: RowProps) {
         aria-pressed={selected}
         className={`flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2.5 text-left text-sm transition-colors ${
           selected
-            ? "border-indigo-300 bg-indigo-50 text-indigo-900"
-            : "border-slate-200 bg-white text-slate-800 hover:bg-slate-50"
+            ? "border-accent-line bg-accent-soft text-fg"
+            : "border-line bg-surface text-fg-2 hover:bg-surface-2"
         }`}
       >
-        <span className="truncate">{item.name}</span>
-        <span className="flex shrink-0 items-center gap-1.5 text-xs text-slate-500">
+        <span className="flex min-w-0 items-center gap-2.5">
+          <span
+            className={`h-1.5 w-1.5 shrink-0 rounded-full ${selected ? "bg-accent" : "bg-line-strong"}`}
+            aria-hidden="true"
+          />
+          <span className="truncate">{item.name}</span>
+        </span>
+        <span className="flex shrink-0 items-center gap-1.5 text-xs text-muted">
           renders
           <span
             ref={counterRef}
-            className="min-w-6 rounded bg-slate-900 px-1.5 py-0.5 text-center font-mono font-semibold tabular-nums text-white"
+            className="min-w-7 rounded-md border border-code-line bg-code px-1.5 py-0.5 text-center font-mono font-semibold tabular-nums text-code-fg"
           />
         </span>
       </button>
@@ -106,19 +129,19 @@ function RenderList({ mode }: { mode: Mode }) {
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_14rem]">
-      <div className="rounded-xl border border-slate-200 bg-white p-4">
-        <label htmlFor={`status-${mode}`} className="text-sm font-medium text-slate-800">
-          Status message <span className="font-normal text-slate-500">(parent state)</span>
+      <div className="rounded-xl border border-line bg-surface p-4 shadow-card">
+        <label htmlFor={`status-${mode}`} className="text-sm font-medium text-fg">
+          Status message <span className="font-normal text-muted">(parent state)</span>
         </label>
         <input
           id={`status-${mode}`}
           value={status}
           onChange={(event) => setStatus(event.target.value)}
           placeholder="Type here to update the parent…"
-          className="mt-1.5 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+          className={`mt-1.5 ${input} ${inputState.default}`}
         />
-        <p className="mt-2 truncate text-xs text-slate-500">
-          Status: {status ? <span className="text-slate-800">{status}</span> : "—"}
+        <p className="mt-2 truncate text-xs text-muted">
+          Status: {status ? <span className="text-fg">{status}</span> : "—"}
         </p>
 
         <ul className="mt-4 space-y-2" aria-label="Projects">
@@ -151,17 +174,18 @@ function RenderList({ mode }: { mode: Mode }) {
       </div>
 
       <dl className="grid grid-cols-2 gap-3 self-start lg:grid-cols-1">
-        <div className="rounded-xl border border-slate-200 bg-white p-4">
-          <dt className="text-xs font-medium text-slate-500">Parent renders</dt>
-          <dd className="mt-1 font-mono text-2xl font-semibold tabular-nums text-slate-950">
+        <div className="rounded-xl border border-line bg-surface p-4 shadow-card">
+          <dt className="text-xs font-semibold uppercase tracking-[0.08em] text-subtle">Parent renders</dt>
+          <dd className="mt-1.5 font-mono text-3xl font-semibold tabular-nums text-fg">
             <span ref={parentCounterRef} />
           </dd>
         </div>
-        <div className="rounded-xl border border-slate-200 bg-white p-4">
-          <dt className="text-xs font-medium text-slate-500">Row renders (total)</dt>
-          <dd className="mt-1 font-mono text-2xl font-semibold tabular-nums text-slate-950">
+        <div className="rounded-xl border border-line bg-surface p-4 shadow-card">
+          <dt className="text-xs font-semibold uppercase tracking-[0.08em] text-subtle">Row renders</dt>
+          <dd className="mt-1.5 font-mono text-3xl font-semibold tabular-nums text-fg">
             <span ref={rowTotalRef} />
           </dd>
+          <p className="mt-1 text-xs text-muted">Total across 5 rows</p>
         </div>
       </dl>
     </div>
@@ -171,36 +195,39 @@ function RenderList({ mode }: { mode: Mode }) {
 export function RerenderDemo() {
   const [mode, setMode] = useState<Mode>("none");
   const [run, setRun] = useState(0);
+  const description = modeDescriptions[mode];
 
   return (
     <div>
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <SegmentedControl
-          label="Row optimisation"
-          value={mode}
-          onChange={setMode}
-          options={[
-            { value: "none", label: "No memo", tone: "broken" },
-            { value: "memo-inline", label: "memo + inline callback", tone: "broken" },
-            { value: "memo-callback", label: "memo + useCallback", tone: "fixed" },
-          ]}
-        />
-        <button
-          type="button"
-          onClick={() => setRun((current) => current + 1)}
-          className="inline-flex items-center gap-1.5 self-start rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 sm:self-auto"
-        >
-          <RotateCcw size={14} aria-hidden="true" />
-          Reset counters
-        </button>
-      </div>
+      <DemoToolbar
+        icon={Activity}
+        context="Render counters · committed renders per component"
+        status={
+          <button
+            type="button"
+            onClick={() => setRun((current) => current + 1)}
+            className={buttonClass({ variant: "ghost", size: "sm", className: "-my-1 h-7" })}
+          >
+            <RotateCcw size={13} aria-hidden="true" />
+            Reset counters
+          </button>
+        }
+      >
+        <div className="w-full">
+          <ControlLabel>Row strategy</ControlLabel>
+          <ChoiceGroup label="Row strategy" choices={modeChoices} value={mode} onChange={setMode} />
+        </div>
+      </DemoToolbar>
 
-      <p className="mb-4 min-h-12 text-sm leading-6 text-slate-600">{modeDescriptions[mode]}</p>
+      <StatusPanel tone={description.tone} className="mb-4">
+        {description.text}
+      </StatusPanel>
 
       {/* Remount on mode change or reset so every counter starts from its mount render */}
       <RenderList key={`${mode}-${run}`} mode={mode} />
 
-      <p className="mt-5 text-sm leading-6 text-slate-600">
+      <p className="mt-5 flex items-start gap-2 border-t border-line pt-4 text-sm leading-6 text-muted">
+        <Info size={15} className="mt-1 shrink-0" aria-hidden="true" />
         Counters show committed renders, including the initial mount. They
         illustrate render behaviour only — these rows are cheap, so skipping
         their renders is not a measurable speed-up here.

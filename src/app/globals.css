@@ -1,76 +1,284 @@
 @import "tailwindcss";
 
+/* `dark:` utilities follow the data-theme attribute set on <html>. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* ------------------------------------------------------------------------
+   Design tokens
+   Components use the semantic names below (bg-surface, text-muted,
+   border-line, bg-accent, text-danger, ...) rather than raw palette colours,
+   so both themes stay consistent and are defined in one place.
+   ------------------------------------------------------------------------ */
+
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
-  --muted: #64748b;
-  --border: #e2e8f0;
+  color-scheme: light;
+
+  /* Surfaces */
+  --canvas: #f5f6f8;
   --surface: #ffffff;
+  --surface-2: #f9fafb;
+  --surface-3: #f1f3f6;
+
+  /* Text */
+  --fg: #0c111d;
+  --fg-2: #344054;
+  --muted: #5d6679;
+  --subtle: #6b7486;
+
+  /* Borders */
+  --line: #e6e8ed;
+  --line-strong: #d0d5dd;
+
+  /* Accent */
   --accent: #4f46e5;
   --accent-hover: #4338ca;
-  --success: #15803d;
-  --danger: #dc2626;
+  --accent-fg: #ffffff;
+  --accent-soft: #eef0ff;
+  --accent-line: #d7dafc;
+  --accent-text: #4338ca;
+
+  /* Semantic states */
+  --success: #067647;
+  --success-soft: #ecfdf3;
+  --success-line: #abefc6;
+  --success-solid: #17b26a;
+  --warning: #b54708;
+  --warning-soft: #fffaeb;
+  --warning-line: #fedf89;
+  --warning-solid: #f79009;
+  --danger: #b42318;
+  --danger-soft: #fef3f2;
+  --danger-line: #fecdca;
+  --danger-solid: #f04438;
+  --info: #026aa2;
+  --info-soft: #f0f9ff;
+  --info-line: #b9e6fe;
+  --info-solid: #0ba5ec;
+
+  /* Code panels (editor surfaces stay dark in both themes) */
+  --code-bg: #0d1117;
+  --code-header: #121823;
+  --code-line: #222a37;
+  --code-fg: #e6edf3;
+  --code-muted: #8b949e;
+  /* Syntax + editor chrome — identical in both themes, defined once here */
+  --code-dim: #9da7b3;
+  --code-gutter: #5c6470;
+  --code-string: #a5d6a7;
+  --code-keyword: #c4b5fd;
+  --code-number: #fcd34d;
+  --code-type: #7dd3fc;
+  --code-function: #c7d2fe;
+  --code-danger: #fda29b;
+  --code-success: #75e0a7;
+
+  /* Focus, elevation, decoration */
+  --ring: #6366f1;
+  --card-shadow: 0 1px 2px rgb(16 24 40 / 0.05);
+  --button-shadow: inset 0 1px 0 rgb(255 255 255 / 0.14), 0 1px 2px rgb(16 24 40 / 0.14);
+  --elevated-shadow: 0 1px 2px rgb(16 24 40 / 0.04), 0 16px 40px -12px rgb(16 24 40 / 0.14);
+  --grid-line: rgb(15 23 42 / 0.045);
+  --selection: #c7d2fe;
+  --selection-fg: #1e1b4b;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --canvas: #0a0d14;
+  --surface: #11151e;
+  --surface-2: #151a25;
+  --surface-3: #1b2130;
+
+  --fg: #edf0f5;
+  --fg-2: #c4cad6;
+  --muted: #8f98a8;
+  --subtle: #7c8597;
+
+  --line: #1f2532;
+  --line-strong: #2c3444;
+
+  --accent: #5a5ef0;
+  --accent-hover: #4a4ee2;
+  --accent-fg: #ffffff;
+  --accent-soft: rgb(99 102 241 / 0.14);
+  --accent-line: rgb(129 140 248 / 0.32);
+  --accent-text: #a5b4fc;
+
+  --success: #47cd89;
+  --success-soft: rgb(23 178 106 / 0.12);
+  --success-line: rgb(71 205 137 / 0.28);
+  --success-solid: #17b26a;
+  --warning: #fdb022;
+  --warning-soft: rgb(247 144 9 / 0.12);
+  --warning-line: rgb(253 176 34 / 0.28);
+  --warning-solid: #f79009;
+  --danger: #f97066;
+  --danger-soft: rgb(240 68 56 / 0.12);
+  --danger-line: rgb(249 112 102 / 0.3);
+  --danger-solid: #f04438;
+  --info: #7cd4fd;
+  --info-soft: rgb(11 165 236 / 0.12);
+  --info-line: rgb(124 212 253 / 0.28);
+  --info-solid: #0ba5ec;
+
+  --code-bg: #0b0e15;
+  --code-header: #0f131b;
+  --code-line: #222a38;
+  --code-fg: #e6edf3;
+  --code-muted: #8b949e;
+
+  --ring: #818cf8;
+  --card-shadow: inset 0 1px 0 rgb(255 255 255 / 0.03), 0 1px 2px rgb(0 0 0 / 0.45);
+  --button-shadow: inset 0 1px 0 rgb(255 255 255 / 0.12), 0 1px 2px rgb(0 0 0 / 0.4);
+  --elevated-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04), 0 20px 48px -16px rgb(0 0 0 / 0.7);
+  --grid-line: rgb(255 255 255 / 0.035);
+  --selection: rgb(99 102 241 / 0.45);
+  --selection-fg: #ffffff;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-fg: var(--fg);
+  --color-fg-2: var(--fg-2);
+  --color-muted: var(--muted);
+  --color-subtle: var(--subtle);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-line: var(--accent-line);
+  --color-accent-text: var(--accent-text);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-success-line: var(--success-line);
+  --color-success-solid: var(--success-solid);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-warning-line: var(--warning-line);
+  --color-warning-solid: var(--warning-solid);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-line: var(--danger-line);
+  --color-danger-solid: var(--danger-solid);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-info-line: var(--info-line);
+  --color-info-solid: var(--info-solid);
+  --color-code: var(--code-bg);
+  --color-code-header: var(--code-header);
+  --color-code-line: var(--code-line);
+  --color-code-fg: var(--code-fg);
+  --color-code-muted: var(--code-muted);
+  --color-code-dim: var(--code-dim);
+  --color-code-gutter: var(--code-gutter);
+  --color-code-string: var(--code-string);
+  --color-code-keyword: var(--code-keyword);
+  --color-code-number: var(--code-number);
+  --color-code-type: var(--code-type);
+  --color-code-function: var(--code-function);
+  --color-code-danger: var(--code-danger);
+  --color-code-success: var(--code-success);
+  --color-ring: var(--ring);
+
+  --shadow-card: var(--card-shadow);
+  --shadow-elevated: var(--elevated-shadow);
+  --shadow-button: var(--button-shadow);
+
+  /* Loading shells fade in only after a short delay, so fast swaps never show them. */
+  --animate-shell-in: shell-in 180ms ease-out 120ms both;
+  @keyframes shell-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
   --font-sans:
-    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
-    Arial, sans-serif;
+    "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
   --font-mono:
-    ui-monospace, "SFMono-Regular", "Cascadia Code", Menlo, Consolas,
-    "Liberation Mono", monospace;
+    ui-monospace, "SFMono-Regular", "Cascadia Code", "JetBrains Mono", Menlo,
+    Consolas, "Liberation Mono", monospace;
 }
 
-* {
-  box-sizing: border-box;
+/* ------------------------------------------------------------------------
+   Base
+   ------------------------------------------------------------------------ */
+
+/*
+ * Base styles live in @layer base so Tailwind utilities (in @layer utilities)
+ * always win. Unlayered rules here would override utilities regardless of
+ * specificity — e.g. `a { color: inherit }` would beat `text-accent-fg`.
+ * Preflight already handles box-sizing, margins, and font inheritance.
+ */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    /* Keeps anchored sections clear of the 64px sticky navbar. */
+    scroll-padding-top: 5rem;
+  }
+
+  body {
+    background: var(--canvas);
+    color: var(--fg);
+    font-family: var(--font-sans);
+    font-feature-settings: "cv11", "ss01";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
+
+  /* Consistent, visible keyboard focus across all interactive elements */
+  :where(a, button, input, textarea, select, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--selection);
+    color: var(--selection-fg);
+  }
 }
 
-html {
-  scroll-behavior: smooth;
+/* Faint grid used behind the hero. */
+@utility bg-grid {
+  background-image:
+    linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+  background-size: 32px 32px;
 }
 
-body {
-  margin: 0;
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans);
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
-}
-
-button,
-a,
-input,
-textarea,
-select {
-  font: inherit;
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-button {
-  cursor: pointer;
-}
-
-button:disabled {
-  cursor: not-allowed;
-}
-
-/* Consistent, visible keyboard focus across all interactive elements */
-:where(a, button, input, textarea, select, summary, [tabindex]):focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-  border-radius: 6px;
-}
-
-::selection {
-  background: #c7d2fe;
-  color: #1e1b4b;
+/* Applied briefly by the theme toggle so colours cross-fade instead of snapping. */
+@media (prefers-reduced-motion: no-preference) {
+  html.theme-transition,
+  html.theme-transition *,
+  html.theme-transition *::before,
+  html.theme-transition *::after {
+    transition:
+      background-color 200ms ease,
+      border-color 200ms ease,
+      color 200ms ease,
+      fill 200ms ease,
+      box-shadow 200ms ease !important;
+    transition-delay: 0ms !important;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

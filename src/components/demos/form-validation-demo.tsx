@@ -1,8 +1,11 @@
 "use client";
 
 import { useRef, useState, type FormEvent } from "react";
-import { CircleAlert, CircleCheck, RotateCcw, TriangleAlert } from "lucide-react";
-import { SegmentedControl } from "@/components/demos/segmented-control";
+import { CircleAlert, CircleCheck, CircleX, ClipboardList, Lock, RotateCcw, TriangleAlert } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { DemoToolbar } from "@/components/ui/demo-toolbar";
+import { ModeSwitch } from "@/components/ui/mode-switch";
+import { buttonClass, input, inputState } from "@/lib/ui";
 
 type Mode = "buggy" | "fixed";
 type Field = "name" | "email" | "message";
@@ -35,6 +38,15 @@ const labels: Record<Field, string> = {
   email: "Email address",
   message: "Message",
 };
+
+function FieldError({ id, children }: { id: string; children: React.ReactNode }) {
+  return (
+    <p id={id} className="mt-1.5 flex items-center gap-1 text-xs font-medium text-danger">
+      <CircleAlert size={12} className="shrink-0" aria-hidden="true" />
+      {children}
+    </p>
+  );
+}
 
 function ContactForm({ mode }: { mode: Mode }) {
   const [values, setValues] = useState<FormValues>(emptyValues);
@@ -105,56 +117,57 @@ function ContactForm({ mode }: { mode: Mode }) {
   if (submitted) {
     const actualErrors = validate(submitted);
     const acceptedInvalid = fieldOrder.filter((field) => actualErrors[field]);
+    const invalid = acceptedInvalid.length > 0;
 
     return (
-      <div className="flex min-h-[26rem] flex-col justify-center rounded-xl border border-slate-200 bg-white p-6">
-        {acceptedInvalid.length > 0 ? (
-          <div className="flex items-start gap-3 text-rose-800">
-            <TriangleAlert size={20} className="mt-0.5 shrink-0" aria-hidden="true" />
-            <div>
-              <p className="font-semibold">Submitted with invalid data</p>
-              <p className="mt-1 text-sm leading-6 text-slate-600">
-                The buggy validation accepted {acceptedInvalid.length} invalid{" "}
-                {acceptedInvalid.length === 1 ? "field" : "fields"}
-                {generic ? `, after showing only "${generic}"` : ""}.
-              </p>
-            </div>
+      <div className="flex min-h-108 flex-col justify-center rounded-xl border border-line bg-surface p-6 shadow-card">
+        <div className="flex items-start gap-3">
+          <span
+            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${
+              invalid
+                ? "border-danger-line bg-danger-soft text-danger"
+                : "border-success-line bg-success-soft text-success"
+            }`}
+          >
+            {invalid ? <TriangleAlert size={19} aria-hidden="true" /> : <CircleCheck size={19} aria-hidden="true" />}
+          </span>
+          <div>
+            <p className={`font-semibold ${invalid ? "text-danger" : "text-success"}`}>
+              {invalid ? "Submitted with invalid data" : "Message ready to send"}
+            </p>
+            <p className="mt-1 text-sm leading-6 text-muted">
+              {invalid ? (
+                <>
+                  The buggy validation accepted {acceptedInvalid.length} invalid{" "}
+                  {acceptedInvalid.length === 1 ? "field" : "fields"}
+                  {generic ? `, after showing only "${generic}"` : ""}.
+                </>
+              ) : (
+                "All fields passed validation. In this demo nothing leaves your browser."
+              )}
+            </p>
           </div>
-        ) : (
-          <div className="flex items-start gap-3 text-emerald-800">
-            <CircleCheck size={20} className="mt-0.5 shrink-0" aria-hidden="true" />
-            <div>
-              <p className="font-semibold">Message ready to send</p>
-              <p className="mt-1 text-sm leading-6 text-slate-600">
-                All fields passed validation. In this demo nothing leaves your browser.
-              </p>
-            </div>
-          </div>
-        )}
+        </div>
 
-        <dl className="mt-5 divide-y divide-slate-100 rounded-lg border border-slate-200 text-sm">
+        <dl className="mt-5 divide-y divide-line overflow-hidden rounded-lg border border-line text-sm">
           {fieldOrder.map((field) => (
-            <div key={field} className="grid grid-cols-[7rem_1fr] gap-3 px-3 py-2.5">
-              <dt className="text-slate-500">{labels[field]}</dt>
-              <dd className="min-w-0 break-words">
+            <div key={field} className="grid grid-cols-[7rem_1fr] gap-3 bg-surface-2 px-3 py-2.5">
+              <dt className="text-muted">{labels[field]}</dt>
+              <dd className="min-w-0 wrap-break-word">
                 {submitted[field] ? (
-                  <span className="text-slate-900">{submitted[field]}</span>
+                  <span className="text-fg">{submitted[field]}</span>
                 ) : (
-                  <span className="italic text-slate-400">(empty)</span>
+                  <span className="italic text-subtle">(empty)</span>
                 )}
                 {actualErrors[field] && (
-                  <span className="mt-0.5 block text-xs text-rose-700">{actualErrors[field]}</span>
+                  <span className="mt-0.5 block text-xs text-danger">{actualErrors[field]}</span>
                 )}
               </dd>
             </div>
           ))}
         </dl>
 
-        <button
-          type="button"
-          onClick={reset}
-          className="mt-5 inline-flex items-center gap-1.5 self-start rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
-        >
+        <button type="button" onClick={reset} className={buttonClass({ variant: "secondary", className: "mt-5 self-start" })}>
           <RotateCcw size={14} aria-hidden="true" />
           Start again
         </button>
@@ -165,35 +178,46 @@ function ContactForm({ mode }: { mode: Mode }) {
   const errorCount = fieldOrder.filter((field) => errors[field]).length;
 
   const inputClass = (field: Field) =>
-    `mt-1.5 block w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 transition-colors focus:outline-none focus:ring-2 ${
-      errors[field]
-        ? "border-rose-400 focus:border-rose-500 focus:ring-rose-200"
-        : "border-slate-300 focus:border-indigo-500 focus:ring-indigo-200"
-    }`;
+    `mt-1.5 ${input} ${errors[field] ? inputState.invalid : inputState.default}`;
 
   const describedBy = (field: Field) => (errors[field] ? `${mode}-${field}-error` : undefined);
+
+  const labelClass = "text-sm font-medium text-fg";
+  const required = isFixed && <span className="text-danger"> *</span>;
 
   return (
     <form
       onSubmit={handleSubmit}
       noValidate
-      className="min-h-[26rem] rounded-xl border border-slate-200 bg-white p-5 sm:p-6"
+      className="min-h-108 rounded-xl border border-line bg-surface p-5 shadow-card sm:p-6"
     >
+      <div className="mb-5 flex items-center justify-between gap-3 border-b border-line pb-4">
+        <div>
+          <p className="text-sm font-semibold text-fg">Contact us</p>
+          <p className="text-xs text-muted">
+            {isFixed ? "Fields marked * are required." : "No required-field checks."}
+          </p>
+        </div>
+      </div>
+
       {isFixed && errorCount > 0 && (
-        <div className="mb-4 flex items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800" role="alert">
+        <div
+          className="mb-4 flex items-center gap-2 rounded-lg border border-danger-line bg-danger-soft px-3 py-2 text-sm text-danger"
+          role="alert"
+        >
           <CircleAlert size={16} className="shrink-0" aria-hidden="true" />
           {errorCount === 1 ? "1 field needs attention." : `${errorCount} fields need attention.`}
         </div>
       )}
       {!isFixed && generic && (
-        <div className="mb-4 rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-700">{generic}</div>
+        <div className="mb-4 rounded-lg border border-line bg-surface-3 px-3 py-2 text-sm text-fg-2">{generic}</div>
       )}
 
       <div className="space-y-4">
         <div>
-          <label htmlFor={`${mode}-name`} className="text-sm font-medium text-slate-800">
+          <label htmlFor={`${mode}-name`} className={labelClass}>
             {labels.name}
-            {isFixed && <span className="text-rose-600"> *</span>}
+            {required}
           </label>
           <input
             ref={nameRef}
@@ -209,17 +233,13 @@ function ContactForm({ mode }: { mode: Mode }) {
             className={inputClass("name")}
             placeholder="Alex Morgan"
           />
-          {errors.name && (
-            <p id={`${mode}-name-error`} className="mt-1.5 text-xs text-rose-700">
-              {errors.name}
-            </p>
-          )}
+          {errors.name && <FieldError id={`${mode}-name-error`}>{errors.name}</FieldError>}
         </div>
 
         <div>
-          <label htmlFor={`${mode}-email`} className="text-sm font-medium text-slate-800">
+          <label htmlFor={`${mode}-email`} className={labelClass}>
             {labels.email}
-            {isFixed && <span className="text-rose-600"> *</span>}
+            {required}
           </label>
           <input
             ref={emailRef}
@@ -237,17 +257,13 @@ function ContactForm({ mode }: { mode: Mode }) {
             className={inputClass("email")}
             placeholder="alex@example.com"
           />
-          {errors.email && (
-            <p id={`${mode}-email-error`} className="mt-1.5 text-xs text-rose-700">
-              {errors.email}
-            </p>
-          )}
+          {errors.email && <FieldError id={`${mode}-email-error`}>{errors.email}</FieldError>}
         </div>
 
         <div>
-          <label htmlFor={`${mode}-message`} className="text-sm font-medium text-slate-800">
+          <label htmlFor={`${mode}-message`} className={labelClass}>
             {labels.message}
-            {isFixed && <span className="text-rose-600"> *</span>}
+            {required}
           </label>
           <textarea
             ref={messageRef}
@@ -264,22 +280,17 @@ function ContactForm({ mode }: { mode: Mode }) {
             placeholder="Tell us about the issue you're seeing…"
           />
           {errors.message ? (
-            <p id={`${mode}-message-error`} className="mt-1.5 text-xs text-rose-700">
-              {errors.message}
-            </p>
+            <FieldError id={`${mode}-message-error`}>{errors.message}</FieldError>
           ) : (
-            <p id={`${mode}-message-hint`} className="mt-1.5 text-xs text-slate-500">
+            <p id={`${mode}-message-hint`} className="mt-1.5 text-xs text-muted">
               {values.message.trim().length}/{MIN_MESSAGE_LENGTH} characters minimum
             </p>
           )}
         </div>
       </div>
 
-      <div className="mt-5 flex flex-wrap items-center gap-3">
-        <button
-          type="submit"
-          className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-700"
-        >
+      <div className="mt-6 flex flex-wrap items-center gap-3">
+        <button type="submit" className={buttonClass()}>
           Send message
         </button>
         <button
@@ -289,7 +300,7 @@ function ContactForm({ mode }: { mode: Mode }) {
             setErrors({});
             setTouched({});
           }}
-          className="text-sm font-medium text-slate-600 underline-offset-4 hover:text-slate-900 hover:underline"
+          className={buttonClass({ variant: "ghost", size: "sm" })}
         >
           Fill invalid sample
         </button>
@@ -303,18 +314,34 @@ export function FormValidationDemo() {
 
   return (
     <div>
-      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <SegmentedControl
+      <DemoToolbar
+        icon={ClipboardList}
+        context="Contact form · validation runs locally"
+        status={
+          <Badge tone="neutral" icon={<Lock size={11} aria-hidden="true" />}>
+            Nothing is stored or sent
+          </Badge>
+        }
+      >
+        <ModeSwitch
           label="Validation version"
           value={mode}
           onChange={setMode}
           options={[
-            { value: "buggy", label: "Buggy validation", tone: "broken" },
-            { value: "fixed", label: "Fixed validation", tone: "fixed" },
+            { value: "buggy", label: "Buggy validation", tone: "broken", icon: CircleX },
+            { value: "fixed", label: "Fixed validation", tone: "fixed", icon: CircleCheck },
           ]}
         />
-        <p className="text-xs text-slate-500">Nothing you type is stored or sent.</p>
-      </div>
+        <p className="px-1 text-xs text-muted">
+          {mode === "buggy" ? (
+            <>
+              Rule: <code className="font-mono text-fg-2">email.includes(&quot;@&quot;)</code>
+            </>
+          ) : (
+            "Required fields, email format, and a 20-character message"
+          )}
+        </p>
+      </DemoToolbar>
 
       <div className="mx-auto max-w-lg">
         {/* key resets the form when switching versions */}

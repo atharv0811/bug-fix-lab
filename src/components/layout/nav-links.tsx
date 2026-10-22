@@ -4,75 +4,124 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ArrowRight, ExternalLink, Menu, X } from "lucide-react";
+import { GitHubMark } from "@/components/ui/github-mark";
 import { siteConfig } from "@/lib/site";
+import { buttonClass } from "@/lib/ui";
+
+type SectionId = "bug-cases" | "how-it-works";
 
 type NavItem = {
   label: string;
   href: string;
-  isActive: (pathname: string) => boolean;
+  /** Homepage section this item points at, used for scroll-based active state. */
+  section?: SectionId;
+  isActive: (pathname: string, section: SectionId | null) => boolean;
 };
 
 const navigation: NavItem[] = [
-  { label: "Home", href: "/", isActive: (pathname) => pathname === "/" },
+  { label: "Home", href: "/", isActive: (pathname, section) => pathname === "/" && section === null },
   {
     label: "Bug Cases",
     href: "/#bug-cases",
-    isActive: (pathname) => pathname.startsWith("/bug-cases"),
+    section: "bug-cases",
+    isActive: (pathname, section) =>
+      pathname.startsWith("/bug-cases") || (pathname === "/" && section === "bug-cases"),
   },
-  { label: "How it works", href: "/#how-it-works", isActive: () => false },
+  {
+    label: "How it works",
+    href: "/#how-it-works",
+    section: "how-it-works",
+    isActive: (pathname, section) => pathname === "/" && section === "how-it-works",
+  },
 ];
 
-function desktopLinkClass(active: boolean) {
-  return `rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-    active
-      ? "bg-indigo-50 text-indigo-700"
-      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+const trackedSections: SectionId[] = ["bug-cases", "how-it-works"];
+
+/**
+ * On the homepage, reports which tracked section sits under the navbar so the
+ * matching link is highlighted while scrolling. Elsewhere it returns null.
+ */
+function useActiveSection(pathname: string | null) {
+  const [section, setSection] = useState<SectionId | null>(null);
+
+  useEffect(() => {
+    if (pathname !== "/") return;
+
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const probe = 96; // just below the 64px sticky navbar
+      let current: SectionId | null = null;
+      for (const id of trackedSections) {
+        const element = document.getElementById(id);
+        if (!element) continue;
+        const { top, bottom } = element.getBoundingClientRect();
+        if (top <= probe && bottom > probe) current = id;
+      }
+      setSection(current);
+    };
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+
+    frame = requestAnimationFrame(update);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, [pathname]);
+
+  return pathname === "/" ? section : null;
+}
+
+/** Transparent links; the active one gets full-contrast text and a short accent underline. */
+function navLinkClass(active: boolean) {
+  return `relative inline-flex h-16 items-center px-3 text-sm font-medium transition-colors duration-150 after:absolute after:inset-x-3 after:-bottom-px after:h-0.5 after:rounded-full after:transition-colors motion-reduce:transition-none ${
+    active ? "text-fg after:bg-accent" : "text-muted after:bg-transparent hover:text-fg"
   }`;
 }
 
-function DesktopActions() {
+function DesktopLinks({ pathname, section }: { pathname: string | null; section: SectionId | null }) {
   return (
-    <div className="hidden items-center gap-2 md:flex">
-      <a
-        href={siteConfig.githubProfileUrl}
-        target="_blank"
-        rel="noreferrer"
-        className="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
-      >
-        GitHub
-        <ExternalLink size={14} aria-hidden="true" />
-        <span className="sr-only">(opens in a new tab)</span>
-      </a>
-      <Link
-        href="/#bug-cases"
-        className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700"
-      >
-        Explore cases
-        <ArrowRight size={15} aria-hidden="true" />
-      </Link>
+    <div className="flex items-center">
+      {navigation.map((item) => {
+        const active = pathname !== null && item.isActive(pathname, section);
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            aria-current={active ? (item.section && pathname === "/" ? "location" : "page") : undefined}
+            className={navLinkClass(active)}
+          >
+            {item.label}
+          </Link>
+        );
+      })}
     </div>
   );
 }
 
-/** Rendered while the pathname is unavailable during prerendering. */
-export function NavLinksFallback() {
-  return (
-    <>
-      <div className="hidden items-center gap-1 md:flex">
-        {navigation.map((item) => (
-          <Link key={item.href} href={item.href} className={desktopLinkClass(false)}>
-            {item.label}
-          </Link>
-        ))}
-      </div>
-      <DesktopActions />
-      <span className="h-9 w-9 md:hidden" aria-hidden="true" />
-    </>
-  );
+export function DesktopNavLinks() {
+  const pathname = usePathname();
+  const section = useActiveSection(pathname);
+  return <DesktopLinks pathname={pathname} section={section} />;
 }
 
-export function NavLinks() {
+/** Rendered while the pathname is unavailable during prerendering. */
+export function DesktopNavLinksFallback() {
+  return <DesktopLinks pathname={null} section={null} />;
+}
+
+export function MobileNavFallback() {
+  return <span className="size-9 md:hidden" aria-hidden="true" />;
+}
+
+export function MobileNav() {
   const pathname = usePathname();
+  const section = useActiveSection(pathname);
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
@@ -90,53 +139,35 @@ export function NavLinks() {
 
   return (
     <>
-      <div className="hidden items-center gap-1 md:flex">
-        {navigation.map((item) => {
-          const active = item.isActive(pathname);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              aria-current={active ? "page" : undefined}
-              className={desktopLinkClass(active)}
-            >
-              {item.label}
-            </Link>
-          );
-        })}
-      </div>
-
-      <DesktopActions />
-
       <button
         type="button"
         onClick={() => setIsOpen((open) => !open)}
         aria-expanded={isOpen}
         aria-controls="mobile-navigation"
         aria-label={isOpen ? "Close menu" : "Open menu"}
-        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-700 transition-colors hover:bg-slate-100 md:hidden"
+        className={buttonClass({ variant: "icon", className: "md:hidden" })}
       >
-        {isOpen ? <X size={18} aria-hidden="true" /> : <Menu size={18} aria-hidden="true" />}
+        {isOpen ? <X size={17} aria-hidden="true" /> : <Menu size={17} aria-hidden="true" />}
       </button>
 
       {isOpen && (
         <div
           id="mobile-navigation"
-          className="absolute inset-x-0 top-full border-b border-slate-200 bg-white px-4 pb-4 pt-2 shadow-lg shadow-slate-200/60 md:hidden"
+          className="absolute inset-x-0 top-full border-b border-line bg-surface px-4 pb-4 pt-3 shadow-elevated md:hidden"
         >
-          <ul className="flex flex-col gap-1">
+          <ul className="flex flex-col gap-0.5">
             {navigation.map((item) => {
-              const active = item.isActive(pathname);
+              const active = item.isActive(pathname, section);
               return (
                 <li key={item.href}>
                   <Link
                     href={item.href}
                     onClick={close}
                     aria-current={active ? "page" : undefined}
-                    className={`block rounded-lg px-3 py-2.5 text-sm font-medium ${
+                    className={`relative flex h-10 items-center rounded-lg px-3 text-sm font-medium transition-colors ${
                       active
-                        ? "bg-indigo-50 text-indigo-700"
-                        : "text-slate-700 hover:bg-slate-100"
+                        ? "bg-surface-3 text-fg before:absolute before:inset-y-2.5 before:left-0 before:w-0.5 before:rounded-full before:bg-accent"
+                        : "text-muted hover:bg-surface-3/60 hover:text-fg"
                     }`}
                   >
                     {item.label}
@@ -150,10 +181,11 @@ export function NavLinks() {
                 target="_blank"
                 rel="noreferrer"
                 onClick={close}
-                className="flex items-center gap-1.5 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-100"
+                className="flex h-10 items-center gap-2 rounded-lg px-3 text-sm font-medium text-muted transition-colors hover:bg-surface-3/60 hover:text-fg"
               >
+                <GitHubMark size={15} />
                 GitHub profile
-                <ExternalLink size={14} aria-hidden="true" />
+                <ExternalLink size={13} className="opacity-70" aria-hidden="true" />
                 <span className="sr-only">(opens in a new tab)</span>
               </a>
             </li>
@@ -161,7 +193,7 @@ export function NavLinks() {
           <Link
             href="/#bug-cases"
             onClick={close}
-            className="mt-3 flex items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700"
+            className={buttonClass({ size: "lg", className: "mt-3 w-full" })}
           >
             Explore cases
             <ArrowRight size={15} aria-hidden="true" />

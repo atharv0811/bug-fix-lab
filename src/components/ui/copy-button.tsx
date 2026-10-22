@@ -56,16 +56,16 @@ export function CopyButton({ code, label }: { code: string; label: string }) {
         type="button"
         onClick={handleCopy}
         aria-label={`Copy ${label}`}
-        className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium transition-colors ${
+        className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-medium transition-colors ${
           status === "copied"
-            ? "text-emerald-300"
+            ? "border-success-solid/30 bg-success-solid/10 text-code-success"
             : status === "error"
-              ? "text-rose-300"
-              : "text-slate-400 hover:bg-white/10 hover:text-slate-100"
+              ? "border-danger-solid/30 bg-danger-solid/10 text-code-danger"
+              : "border-code-line text-code-dim hover:bg-white/5 hover:text-code-fg"
         }`}
       >
-        <Icon size={14} aria-hidden="true" />
-        <span className="w-[4.5rem] text-left">{text}</span>
+        <Icon size={13} aria-hidden="true" />
+        <span className="w-18 text-left">{text}</span>
       </button>
       <span className="sr-only" role="status" aria-live="polite">
         {status === "copied" ? `Copied ${label} to clipboard` : status === "error" ? "Copy failed" : ""}
